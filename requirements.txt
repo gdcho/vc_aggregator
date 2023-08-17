@@ -4,3 +4,4 @@ tweepy
 google-api-python-client
 tiktok-api
 gtts
+python-dotenv
