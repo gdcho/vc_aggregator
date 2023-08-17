@@ -1,0 +1,6 @@
+selenium
+moviepy
+tweepy
+google-api-python-client
+tiktok-api
+gtts

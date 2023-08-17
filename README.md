@@ -1,1 +1,1 @@
-# video_content_aggregator
+# vc_aggregator
