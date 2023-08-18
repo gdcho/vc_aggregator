@@ -1,5 +1,6 @@
 moviepy
 google-api-python-client
 tiktok-api
+openai
 gtts
 python-dotenv
