@@ -4,3 +4,4 @@ tiktok-api
 openai
 gtts
 python-dotenv
+requests
