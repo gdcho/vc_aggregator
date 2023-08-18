@@ -2,6 +2,9 @@ import openai
 import requests
 from dotenv import load_dotenv
 import os
+from gtts import gTTS
+import IPython.display as ipd
+from io import BytesIO
 
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
@@ -50,3 +53,16 @@ if 'videos' in pexels_data:
         print("No videos found.")
 else:
     print("No videos found in the response.")
+
+# gTTS - Text to Speech
+tts = gTTS(generated_fact, lang='en', tld='com.au', slow=False)
+audio_bytes = BytesIO()
+tts.write_to_fp(audio_bytes)
+audio_bytes.seek(0) 
+
+audio_filename = "generated_fact.mp3"
+with open(audio_filename, "wb") as f:
+    f.write(audio_bytes.read())
+
+# Display and play audio
+ipd.display(ipd.Audio(audio_filename, autoplay=True))
