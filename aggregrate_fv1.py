@@ -35,10 +35,9 @@ def generate_subject_noun_prompt(fact):
 def fetch_pexels_videos(keyword):
     pexels_url = f"https://api.pexels.com/videos/search?query={keyword}&per_page=2"
     headers = {"Authorization": pexels_api_key}
-    response = requests.get(pexels_url, headers=headers)
+    response = requests.get(pexels_url, headers=headers, timeout=30)
     pexels_data = response.json()
     return pexels_data.get('videos', [])
-
 
 fact_prompt = generate_fact_prompt()
 fact_response = openai.Completion.create(
@@ -117,7 +116,7 @@ for video in response['items']:
     youtube_video_url = f"https://www.youtube.com/watch?v={video['id']['videoId']}"
 
     yt = pytube.YouTube(youtube_video_url)
-    video_stream = yt.streams.get_highest_resolution()
+    video_stream = yt.streams.filter(progressive=True, file_extension="mp4").order_by("resolution").desc().first()
     video_filename = f"youtube_video_{video['id']['videoId']}.mp4"
     video_stream.download(output_path="", filename=video_filename)
 
@@ -125,7 +124,7 @@ for video in response['items']:
     youtube_video_clips.append(youtube_video_clip)
 
 # MoviePy text clip
-text_clip = TextClip(generated_fact, fontsize=20, color='white').set_duration(60) 
+text_clip = TextClip(generated_fact, fontsize=20, color='white').set_duration(60)
 
 # Stack the Pexels and YouTube
 stacked_pexels_videos = concatenate_videoclips(pexels_video_clips)

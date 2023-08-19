@@ -5,8 +5,7 @@ openai
 gtts
 python-dotenv
 requests
-ffmpeg
 shutilwhich
 urllib3
-ssl
 pytube
+pygame
