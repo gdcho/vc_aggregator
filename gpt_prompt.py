@@ -1,19 +1,12 @@
 import openai
-import requests
 from dotenv import load_dotenv
 import os
-from gtts import gTTS
-import IPython.display as ipd
-from io import BytesIO
-from googleapiclient.discovery import build
+import requests
 
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
-pexels_api_key = os.getenv("PEXELS_API_KEY")
 openai.api_key = api_key
-youtube_api_key = os.getenv("YOUTUBE_API_KEY")
-youtube = build('youtube', 'v3', developerKey=youtube_api_key)
-
+pexels_api_key = os.getenv("PEXELS_API_KEY")
 
 def generate_fact_prompt():
     return "Give me around 75 words based on an interesting fact."
@@ -48,36 +41,3 @@ noun_response = openai.Completion.create(
     stop=None
 )
 generated_noun = noun_response.choices[0].text.strip()
-
-# Fetch Pexels
-videos = fetch_pexels_videos(generated_noun)
-
-print(f"\nGenerated Fact: {generated_fact}")
-print(f"\nGenerated Noun: {generated_noun}\n")
-if videos:
-    for video in videos:
-        print(f"Pexel URL: {video['url']}")
-else:
-    print("No videos found.")
-
-# Fetch YouTube
-search_query = generated_noun + " free stock footage"
-request = youtube.search().list(q=search_query, part='snippet', maxResults=3)
-response = request.execute()
-print("\nYouTube:")
-for videos in response['items']:
-    print(
-        f"YouTube Video Link: https://www.youtube.com/watch?v={videos['id']['videoId']}")
-
-# gTTS - Text to Speech
-tts = gTTS(generated_fact, lang='en', tld='com.au', slow=False)
-audio_bytes = BytesIO()
-tts.write_to_fp(audio_bytes)
-audio_bytes.seek(0)
-
-audio_filename = "generated_fact.mp3"
-with open(audio_filename, "wb") as f:
-    f.write(audio_bytes.read())
-
-# Display and play audio
-ipd.display(ipd.Audio(audio_filename, autoplay=True))
