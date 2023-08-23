@@ -14,6 +14,8 @@ ssl._create_default_https_context = ssl._create_unverified_context
 
 os.environ["IMAGEIO_FFMPEG_EXE"] = "/usr/bin/ffmpeg"
 
+output_folder = "//Users/davidcho/vc_aggregator/output_folder"
+
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
 pexels_api_key = os.getenv("PEXELS_API_KEY")
@@ -104,7 +106,8 @@ for video_info in pexels_videos:
             (file['link'] for file in video_files if file['file_type'] == 'video/mp4'), None)
 
         if video_url:
-            video_filename = video_url.split('/')[-1]
+            video_filename = os.path.basename(urllib.parse.urlparse(video_url).path)
+            video_filename = os.path.join(output_folder, video_filename)
             urllib.request.urlretrieve(video_url, video_filename)
             pexels_video_clip = VideoFileClip(
                 video_filename).subclip(0, 20)
@@ -119,8 +122,11 @@ for videos in response['items']:
     yt = YouTube(youtube_video_url)
     video_stream = yt.streams.filter(
         progressive=True, file_extension="mp4").order_by("resolution").desc().first()
-    video_filename = f"youtube_video_{videos['id']['videoId']}.mp4"
-    video_stream.download(output_path="", filename=video_filename)
+    
+    video_filename = os.path.join(output_folder, f"youtube_video_{videos['id']['videoId']}.mp4")
+    
+    video_stream.download(output_path=output_folder, filename=os.path.basename(video_filename))
+    
     youtube_video_clip = VideoFileClip(
         video_filename).subclip(0, 10)
     youtube_video_clips.append(youtube_video_clip)
@@ -144,10 +150,10 @@ stacked_youtube_videos = stacked_youtube_videos.set_position(
 
 final_video = CompositeVideoClip(
     [text_clip, stacked_pexels_videos, stacked_youtube_videos], size=(video_width, video_height))
-tts_audio_clip = tts_audio_clip.volumex(0.9) 
+tts_audio_clip = tts_audio_clip.volumex(0.9)
 final_video = final_video.set_audio(tts_audio_clip)
 print("TTS Audio Duration:", tts_audio_clip.duration)
 
-output_video_path = "final_video_shorts.mp4"
+output_video_path = os.path.join(output_folder, "final_video_shorts.mp4")
 final_video.write_videofile(
     output_video_path, codec="libx264", audio_codec="aac", threads=4)
