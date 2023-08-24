@@ -5,11 +5,18 @@ import os
 from gtts import gTTS
 from io import BytesIO
 from googleapiclient.discovery import build
-from moviepy.editor import AudioFileClip, VideoFileClip, TextClip, CompositeVideoClip, concatenate_videoclips
+from moviepy.editor import (
+    AudioFileClip,
+    VideoFileClip,
+    TextClip,
+    CompositeVideoClip,
+    concatenate_videoclips,
+)
 import urllib.request
 import ssl
 from pytube import YouTube
-from moviepy.video.io.VideoFileClip import VideoFileClip
+from moviepy.editor import VideoFileClip as EditorVideoFileClip
+import textwrap
 ssl._create_default_https_context = ssl._create_unverified_context
 
 os.environ["IMAGEIO_FFMPEG_EXE"] = "/usr/bin/ffmpeg"
@@ -162,22 +169,45 @@ stacked_youtube_videos = concatenate_videoclips(
 stacked_youtube_videos = stacked_youtube_videos.resize(
     (video_width, video_height))
 
-final_video_duration = tts_audio_clip.duration
-
-text_clip = TextClip(generated_fact, fontsize=40, color='white', size=(video_width, None))
-text_clip = text_clip.set_position(('center', video_height - 100))
-
-text_y_position = video_height - text_clip.h - 100
-text_clip = text_clip.set_position(('center', text_y_position))
-text_clip = text_clip.set_duration(final_video_duration)
-
-tts_audio_clip = tts_audio_clip.volumex(0.9)
-tts_audio_clip = tts_audio_clip.set_duration(final_video_duration)
 
 final_video = CompositeVideoClip(
-    [stacked_pexels_videos, stacked_youtube_videos, text_clip], size=(video_width, video_height))
-final_video = final_video.set_audio(tts_audio_clip)
+    [stacked_pexels_videos, stacked_youtube_videos], size=(video_width, video_height))
+
+final_video_duration = min(tts_audio_clip.duration, final_video.duration)
+final_video = final_video.set_audio(tts_audio_clip.subclip(0, final_video_duration))
 
 output_video_path = os.path.join(output_folder, "final_video_shorts.mp4")
 final_video.write_videofile(
     output_video_path, codec="libx264", audio_codec="aac", threads=4)
+
+video_path = os.path.join(output_folder, "final_video_shorts.mp4")
+if os.path.exists(video_path):
+    video = EditorVideoFileClip(video_path)
+else:
+    print("Video file not found:", video_path)
+
+fact_parts = textwrap.wrap(generated_fact, width=40)  
+
+subs = []
+interval_duration = 3  
+
+start_time = 0
+
+for part in fact_parts:
+    end_time = min(start_time + interval_duration, final_video_duration)
+    subs.append(((start_time, end_time), part))
+    start_time = end_time
+
+# Use MoviePy's VideoFileClip for annotation
+def annotate(clip, txt, txt_color="red", fontsize=50, font="Xolonium-Bold"):
+    txtclip = TextClip(txt, fontsize=fontsize, color=txt_color, font=font).set_duration(
+        clip.duration
+    )
+    txtclip = txtclip.set_position(("center", "bottom")).set_duration(clip.duration)
+    cvc = CompositeVideoClip([clip, txtclip])
+    return cvc
+
+annotated_clips = [annotate(final_video.subclip(from_t, min(to_t, final_video_duration)), txt) for (from_t, to_t), txt in subs]
+final_clip = concatenate_videoclips(annotated_clips)
+output_video_path = os.path.join(output_folder, "final_video_with_subtitles.mp4")
+final_clip.write_videofile(output_video_path)
