@@ -76,9 +76,10 @@ response = request.execute()
 print("\nYouTube:")
 if 'items' in response:
     for video_info in response['items']:
-        video_id = video_info['id'].get('videoId') 
+        video_id = video_info['id'].get('videoId')
         if video_id:
-            print(f"YouTube Video Link: https://www.youtube.com/watch?v={video_id}")
+            print(
+                f"YouTube Video Link: https://www.youtube.com/watch?v={video_id}")
         else:
             print("No 'videoId' found for this item.")
 else:
@@ -114,7 +115,8 @@ for video_info in pexels_videos:
             video_filename = os.path.join(output_folder, video_filename)
             urllib.request.urlretrieve(video_url, video_filename)
             pexels_video_clip = VideoFileClip(video_filename)
-            pexels_video_clip = pexels_video_clip.subclip(0, tts_audio_clip.duration//3).set_duration(tts_audio_clip.duration//3) 
+            pexels_video_clip = pexels_video_clip.subclip(
+                0, tts_audio_clip.duration//3).set_duration(tts_audio_clip.duration//3)
             pexels_video_clips.append(pexels_video_clip)
 
 # Fetch YouTube
@@ -137,7 +139,8 @@ for video_info in response.get('items', []):
                               filename=os.path.basename(video_filename))
 
         youtube_video_clip = VideoFileClip(video_filename)
-        youtube_video_clip = youtube_video_clip.subclip(0, tts_audio_clip.duration//3).set_duration(tts_audio_clip.duration//3)  
+        youtube_video_clip = youtube_video_clip.subclip(
+            0, tts_audio_clip.duration//3).set_duration(tts_audio_clip.duration//3)
         youtube_video_clips.append(youtube_video_clip)
 
 for pexels_clip in pexels_video_clips:
@@ -149,28 +152,32 @@ for youtube_clip in youtube_video_clips:
 video_width = 1080
 video_height = 1920
 
-stacked_pexels_videos = concatenate_videoclips(pexels_video_clips, method="compose")
-stacked_pexels_videos = stacked_pexels_videos.resize((video_width, video_height))
+stacked_pexels_videos = concatenate_videoclips(
+    pexels_video_clips, method="compose")
+stacked_pexels_videos = stacked_pexels_videos.resize(
+    (video_width, video_height))
 
-stacked_youtube_videos = concatenate_videoclips(youtube_video_clips, method="compose")
-stacked_youtube_videos = stacked_youtube_videos.set_position(('center', video_height - stacked_youtube_videos.h + 100))
+stacked_youtube_videos = concatenate_videoclips(
+    youtube_video_clips, method="compose")
+stacked_youtube_videos = stacked_youtube_videos.resize(
+    (video_width, video_height))
+
+final_video_duration = tts_audio_clip.duration
 
 text_clip = TextClip(generated_fact, fontsize=40, color='white', size=(video_width, None))
 text_clip = text_clip.set_position(('center', video_height - 100))
 
-# clip_durations = [clip.duration for clip in [text_clip, stacked_pexels_videos, stacked_youtube_videos] if clip.duration is not None]
-# final_video_duration = max(clip_durations, default=0)
-final_video_duration = tts_audio_clip.duration
-
+text_y_position = video_height - text_clip.h - 100
+text_clip = text_clip.set_position(('center', text_y_position))
 text_clip = text_clip.set_duration(final_video_duration)
 
 tts_audio_clip = tts_audio_clip.volumex(0.9)
 tts_audio_clip = tts_audio_clip.set_duration(final_video_duration)
 
-final_video = CompositeVideoClip([stacked_pexels_videos, stacked_youtube_videos, text_clip], size=(video_width, video_height))
+final_video = CompositeVideoClip(
+    [stacked_pexels_videos, stacked_youtube_videos, text_clip], size=(video_width, video_height))
 final_video = final_video.set_audio(tts_audio_clip)
 
 output_video_path = os.path.join(output_folder, "final_video_shorts.mp4")
-final_video.write_videofile(output_video_path, codec="libx264", audio_codec="aac", threads=4)
-
-
+final_video.write_videofile(
+    output_video_path, codec="libx264", audio_codec="aac", threads=4)
