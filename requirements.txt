@@ -8,4 +8,4 @@ requests
 shutilwhich
 urllib3
 pytube
-pygame
+opencv-python

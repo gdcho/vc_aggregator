@@ -10,7 +10,6 @@ import urllib.request
 import ssl
 from pytube import YouTube
 from moviepy.video.io.VideoFileClip import VideoFileClip
-from moviepy.video.fx import crop as fx_crop
 ssl._create_default_https_context = ssl._create_unverified_context
 
 os.environ["IMAGEIO_FFMPEG_EXE"] = "/usr/bin/ffmpeg"
@@ -77,9 +76,11 @@ response = request.execute()
 print("\nYouTube:")
 if 'items' in response:
     for video_info in response['items']:
-        video_id = video_info['id']['videoId']
-        print(
-            f"YouTube Video Link: https://www.youtube.com/watch?v={video_id}")
+        video_id = video_info['id'].get('videoId') 
+        if video_id:
+            print(f"YouTube Video Link: https://www.youtube.com/watch?v={video_id}")
+        else:
+            print("No 'videoId' found for this item.")
 else:
     print("No videos found.")
 
@@ -156,28 +157,12 @@ stacked_youtube_videos = concatenate_videoclips(
 stacked_youtube_videos = stacked_youtube_videos.set_position(
     ('center', video_height - stacked_youtube_videos.h))
 
-stacked_pexels_videos = stacked_pexels_videos.resize(width=video_width)
-stacked_youtube_videos = stacked_youtube_videos.resize(width=video_width)
-
-content_width = max(text_clip.w, stacked_pexels_videos.w,
-                    stacked_youtube_videos.w)
-margin = (content_width - video_width) // 2
-
-
-def apply_blur_with_margin_and_crop(clip, margin):
-    blurred_clip = clip.resize((clip.w + 2 * margin, clip.h))
-    blurred_clip = fx_crop(blurred_clip, x1=margin, x2=blurred_clip.w - margin)
-    return blurred_clip
-
-
 final_video = CompositeVideoClip(
     [text_clip, stacked_pexels_videos, stacked_youtube_videos], size=(video_width, video_height))
-
 tts_audio_clip = tts_audio_clip.volumex(0.9)
 final_video = final_video.set_audio(tts_audio_clip)
+print("TTS Audio Duration:", tts_audio_clip.duration)
 
-blurred_clip = apply_blur_with_margin_and_crop(final_video, margin)
-
-output_video_path = os.path.join(output_folder, "final_video_blur.mp4")
-blurred_clip.write_videofile(
+output_video_path = os.path.join(output_folder, "final_video_shorts.mp4")
+final_video.write_videofile(
     output_video_path, codec="libx264", audio_codec="aac", threads=4)
