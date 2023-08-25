@@ -8,3 +8,5 @@ shutilwhich
 urllib3
 pytube
 opencv-python
+google-auth-httplib2
+google-auth-oauthlib
