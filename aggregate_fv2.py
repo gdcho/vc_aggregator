@@ -70,7 +70,7 @@ def get_tts_audio_clip(text):
     audio_bytes = BytesIO()
     tts.write_to_fp(audio_bytes)
     audio_bytes.seek(0)
-    temp_audio_filename = "temp_audio.mp3"
+    temp_audio_filename = os.path.join(OUTPUT_FOLDER, "temp_audio.mp3")
     with open(temp_audio_filename, "wb") as f:
         f.write(audio_bytes.read())
     audio_clip = AudioFileClip(temp_audio_filename)
@@ -79,6 +79,8 @@ def get_tts_audio_clip(text):
 
 def process_pexels_videos(pexels_videos, audio_clip_duration):
     video_clips = []
+    target_duration = audio_clip_duration / 3
+
     for video_info in pexels_videos:
         video_files = video_info.get('video_files', [])
         if video_files:
@@ -90,8 +92,14 @@ def process_pexels_videos(pexels_videos, audio_clip_duration):
                 video_filename = os.path.join(OUTPUT_FOLDER, video_filename)
                 download_video_from_url(video_url, video_filename)
                 video_clip = VideoFileClip(video_filename)
-                video_clip = video_clip.set_duration(audio_clip_duration // 3)
+
+                if video_clip.duration < target_duration:
+                    loop_count = int(target_duration // video_clip.duration) + 1
+                    video_clip = concatenate_videoclips([video_clip] * loop_count)
+
+                video_clip = video_clip.set_duration(target_duration)
                 video_clips.append(video_clip)
+
     return video_clips
 
 
@@ -108,10 +116,32 @@ def process_youtube_videos(youtube_videos, audio_clip_duration):
                 OUTPUT_FOLDER, f"youtube_video_{video_id}.mp4")
             video_stream.download(output_path=OUTPUT_FOLDER,
                                   filename=os.path.basename(video_filename))
-            video_clip = VideoFileClip(video_filename)
-            video_clip = video_clip.set_duration(audio_clip_duration // 3)
+            video_clip = VideoFileClip(video_filename).subclip(5)  
+            video_clip = video_clip.set_duration(audio_clip_duration / 3)
             video_clips.append(video_clip)
     return video_clips
+
+def resize_and_crop_video(clip, target_width, target_height):
+    original_aspect_ratio = clip.size[0] / clip.size[1]
+    target_aspect_ratio = target_width / target_height
+    
+    if original_aspect_ratio > target_aspect_ratio:
+        new_width = int(clip.size[1] * target_aspect_ratio)
+        new_height = clip.size[1]
+    else:
+        new_width = clip.size[0]
+        new_height = int(clip.size[0] / target_aspect_ratio)
+    
+    x_center = clip.size[0] / 2
+    y_center = clip.size[1] / 2
+    clip_cropped = clip.crop(
+        x_center=x_center,
+        y_center=y_center,
+        width=new_width,
+        height=new_height
+    )
+    
+    return clip_cropped.resize(newsize=(target_width, target_height))
 
 
 def generate_subtitles(fact, final_video_duration):
@@ -139,6 +169,12 @@ def annotate_video_with_subtitles(video, subtitles):
         to_t, video.duration)), txt) for (from_t, to_t), txt in subtitles]
     return concatenate_videoclips(annotated_clips)
 
+def delete_output_files_except_final():
+    final_video_name = "final_video_with_subtitles.mp4"
+    for filename in os.listdir(OUTPUT_FOLDER):
+        file_path = os.path.join(OUTPUT_FOLDER, filename)
+        if os.path.isfile(file_path) and filename != final_video_name:
+            os.remove(file_path)
 
 def main():
     fact = generate_fact()
@@ -146,7 +182,6 @@ def main():
     pexels_videos = fetch_pexels_videos(noun)
     youtube_videos = fetch_youtube_videos(noun)
 
-    # Print results
     print(f"\nGenerated Fact: {fact}")
     print(f"\nGenerated Noun: {noun}\n")
     for video in pexels_videos:
@@ -169,13 +204,11 @@ def main():
     video_width = 1080
     video_height = 1920
 
-    pexels_video_clips_resized = [clip.resize(
-        (video_width, video_height)) for clip in pexels_video_clips]
-    youtube_video_clips_resized = [clip.resize(
-        (video_width, video_height)) for clip in youtube_video_clips]
+    pexels_video_clips_resized_cropped = [resize_and_crop_video(clip, video_width, video_height) for clip in pexels_video_clips]
+    youtube_video_clips_resized_cropped = [resize_and_crop_video(clip, video_width, video_height) for clip in youtube_video_clips]
 
-    paired_clips = list(zip(pexels_video_clips_resized,
-                        youtube_video_clips_resized))
+    paired_clips = list(zip(pexels_video_clips_resized_cropped,
+                        youtube_video_clips_resized_cropped))
 
     stacked_clips = [clips_array([[clip1], [clip2]])
                      for clip1, clip2 in paired_clips]
@@ -201,3 +234,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    delete_output_files_except_final()
