@@ -13,21 +13,19 @@
 </details>
 <br />
 <div align="center">
-  <!-- <a href="https://github.com/gdcho/algo_v">
-    <img src="/public/images/algov.png" alt="Logo" width="300" height="300">
-  </a> -->
+  <a href="https://github.com/gdcho/vc_aggregator">
+    <img src="/img/vca.png" alt="Logo" width="300" height="300">
+  </a>
 
   <h3 align="center">Video Content Aggregator</h3>
 
 
   <p align="center">
-    Video Content Generator with YouTube API, OpenAI API, and MoviePy - Create dynamic video content with a vc aggregator.
+    Video Content Generator with YouTube API, OpenAI API, and MoviePy. Create dynamic video content with a vc aggregator.
     <br />
     <a href="https://github.com/gdcho/vc_aggregator"><strong>Explore the docs »</strong></a>
     <br />
-    <br />
-    <a href="https://algo-v-sepia.vercel.app/">See Project</a>
-    ·
+    <br />  
     <a href="https://github.com/gdcho/vc_aggregator/issues">Report Bug</a>
     ·
     <a href="https://github.com/gdcho/vc_aggregator/issues">Request Feature</a>
@@ -54,7 +52,7 @@
    ```sh
    git clone https://github.com/gdcho/algo_v
    ```
-2. Obtain API keys from [YouTube](https://developers.google.com/youtube/v3/getting-started), [OpenAI](https://beta.openai.com/), and [Pexels](https://www.pexels.com/api/new/).
+2. Obtain API keys from [YouTube](https://developers.google.com/youtube/v3/getting-started), [OpenAI](https://beta.openai.com/), and [Pexels](https://www.pexels.com/api/new/) and save them in .env file
 3. Install Python requirements
 
    ```sh

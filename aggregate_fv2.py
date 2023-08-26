@@ -40,6 +40,14 @@ def generate_fact():
     return response.choices[0].text.strip()
 
 
+def generate_title(fact):
+    prompt = f"Based on the generated fact, {fact}, return a short title for the video."
+    response = openai.Completion.create(
+        engine="text-davinci-003", prompt=prompt, max_tokens=30)
+    video_title = response.choices[0].text.strip()
+    return video_title
+
+
 def generate_subject_noun(fact):
     prompt = f"Based on the generated fact, {fact}, return a main subject noun."
     response = openai.Completion.create(
@@ -94,8 +102,10 @@ def process_pexels_videos(pexels_videos, audio_clip_duration):
                 video_clip = VideoFileClip(video_filename)
 
                 if video_clip.duration < target_duration:
-                    loop_count = int(target_duration // video_clip.duration) + 1
-                    video_clip = concatenate_videoclips([video_clip] * loop_count)
+                    loop_count = int(target_duration //
+                                     video_clip.duration) + 1
+                    video_clip = concatenate_videoclips(
+                        [video_clip] * loop_count)
 
                 video_clip = video_clip.set_duration(target_duration)
                 video_clips.append(video_clip)
@@ -105,6 +115,8 @@ def process_pexels_videos(pexels_videos, audio_clip_duration):
 
 def process_youtube_videos(youtube_videos, audio_clip_duration):
     video_clips = []
+    target_duration = audio_clip_duration / 3
+
     for video_info in youtube_videos:
         video_id = video_info.get('id', {}).get('videoId')
         if video_id:
@@ -116,22 +128,28 @@ def process_youtube_videos(youtube_videos, audio_clip_duration):
                 OUTPUT_FOLDER, f"youtube_video_{video_id}.mp4")
             video_stream.download(output_path=OUTPUT_FOLDER,
                                   filename=os.path.basename(video_filename))
-            video_clip = VideoFileClip(video_filename).subclip(5)  
-            video_clip = video_clip.set_duration(audio_clip_duration / 3)
+            video_clip = VideoFileClip(video_filename).subclip(5)
+
+            if video_clip.duration < target_duration:
+                loop_count = int(target_duration // video_clip.duration) + 1
+                video_clip = concatenate_videoclips([video_clip] * loop_count)
+
+            video_clip = video_clip.set_duration(target_duration)
             video_clips.append(video_clip)
     return video_clips
+
 
 def resize_and_crop_video(clip, target_width, target_height):
     original_aspect_ratio = clip.size[0] / clip.size[1]
     target_aspect_ratio = target_width / target_height
-    
+
     if original_aspect_ratio > target_aspect_ratio:
         new_width = int(clip.size[1] * target_aspect_ratio)
         new_height = clip.size[1]
     else:
         new_width = clip.size[0]
         new_height = int(clip.size[0] / target_aspect_ratio)
-    
+
     x_center = clip.size[0] / 2
     y_center = clip.size[1] / 2
     clip_cropped = clip.crop(
@@ -140,14 +158,14 @@ def resize_and_crop_video(clip, target_width, target_height):
         width=new_width,
         height=new_height
     )
-    
+
     return clip_cropped.resize(newsize=(target_width, target_height))
 
 
 def generate_subtitles(fact, final_video_duration):
     fact_parts = textwrap.wrap(fact, width=40)
     subs = []
-    interval_duration = 3
+    interval_duration = 2.7
     start_time = 0
     for part in fact_parts:
         end_time = min(start_time + interval_duration, final_video_duration)
@@ -169,15 +187,18 @@ def annotate_video_with_subtitles(video, subtitles):
         to_t, video.duration)), txt) for (from_t, to_t), txt in subtitles]
     return concatenate_videoclips(annotated_clips)
 
-def delete_output_files_except_final():
-    final_video_name = "final_video_with_subtitles.mp4"
+
+def delete_output_files_except_final(video_title):
+    final_video_name = video_title + ".mp4"
     for filename in os.listdir(OUTPUT_FOLDER):
         file_path = os.path.join(OUTPUT_FOLDER, filename)
         if os.path.isfile(file_path) and filename != final_video_name:
             os.remove(file_path)
 
+
 def main():
     fact = generate_fact()
+    video_title = generate_title(fact)
     noun = generate_subject_noun(fact)
     pexels_videos = fetch_pexels_videos(noun)
     youtube_videos = fetch_youtube_videos(noun)
@@ -192,7 +213,6 @@ def main():
             print(
                 f"YouTube Video Link: https://www.youtube.com/watch?v={video_id}")
 
-    # Process videos and audio
     audio_clip = get_tts_audio_clip(fact)
     audio_clip = audio_clip.volumex(1.0)
     print(f"Audio Duration: {audio_clip.duration} seconds")
@@ -204,8 +224,10 @@ def main():
     video_width = 1080
     video_height = 1920
 
-    pexels_video_clips_resized_cropped = [resize_and_crop_video(clip, video_width, video_height) for clip in pexels_video_clips]
-    youtube_video_clips_resized_cropped = [resize_and_crop_video(clip, video_width, video_height) for clip in youtube_video_clips]
+    pexels_video_clips_resized_cropped = [resize_and_crop_video(
+        clip, video_width, video_height) for clip in pexels_video_clips]
+    youtube_video_clips_resized_cropped = [resize_and_crop_video(
+        clip, video_width, video_height) for clip in youtube_video_clips]
 
     paired_clips = list(zip(pexels_video_clips_resized_cropped,
                         youtube_video_clips_resized_cropped))
@@ -227,11 +249,11 @@ def main():
         final_video, subtitles)
     final_video_with_subs = final_video_with_subs.set_audio(final_video.audio)
     output_video_with_subs_path = os.path.join(
-        OUTPUT_FOLDER, "final_video_with_subtitles.mp4")
+        OUTPUT_FOLDER, video_title + ".mp4")
     final_video_with_subs.write_videofile(
         output_video_with_subs_path, codec="libx264", audio_codec="aac", threads=4)
+    delete_output_files_except_final(video_title)
 
 
 if __name__ == "__main__":
     main()
-    delete_output_files_except_final()

@@ -38,7 +38,7 @@ def upload_video_to_youtube(youtube, file_path, title, description):
                 "publishAt": "2023-08-24T00:00:00.0Z"  
             }
         },
-        media_body=MediaFileUpload(file_path)
+        media_body=MediaFileUpload(file_path, mimetype='video/mp4', resumable=True)
     )
     response = request.execute()
     return response
