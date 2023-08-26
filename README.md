@@ -82,6 +82,7 @@
 │   └── vca.png
 ├── main.py
 ├── output_folder
+│   └── note.txt
 ├── requirements.txt
 ├── test_api
 │   ├── gpt_prompt.py
