@@ -26,6 +26,8 @@
     <a href="https://github.com/gdcho/vc_aggregator"><strong>Explore the docs »</strong></a>
     <br />
     <br />  
+    <a href="https://www.youtube.com/@QuickUniqueFacts">View Clips</a>
+    ·
     <a href="https://github.com/gdcho/vc_aggregator/issues">Report Bug</a>
     ·
     <a href="https://github.com/gdcho/vc_aggregator/issues">Request Feature</a>
@@ -36,8 +38,8 @@
 ## Technology used
 
 ![Python Badge](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=fff&style=for-the-badge)
+![OpenAI API](https://img.shields.io/badge/OpenAI%20API-00A67E?style=for-the-badge&logo=openai&logoColor=white)
 ![YouTube API](https://img.shields.io/badge/YouTube%20API-FF0000?style=for-the-badge&logo=youtube&logoColor=white)
-![OpenAI API](https://img.shields.io/badge/OpenAI%20API-FF6600?style=for-the-badge&logo=openai&logoColor=white)
 ![Pexel API](https://img.shields.io/badge/Pexel%20API-05A081?style=for-the-badge&logo=pexels&logoColor=white)
 ![Google Cloud Platform](https://img.shields.io/badge/Google%20Cloud%20Platform-4285F4?style=for-the-badge&logo=google-cloud&logoColor=white)
 ![MoviePy](https://img.shields.io/badge/MoviePy-000000?style=for-the-badge&logo=python&logoColor=white)
@@ -59,10 +61,10 @@
    pip install -r requirements.txt
    ```
 4. Obtain OAuth Client Secret from [Google Cloud Platform](https://console.cloud.google.com/apis/credentials) and create yt_client_secret.json
-5. Run the app
+5. Run the python script
 
    ```sh
-    python3 aggregate_fv1.py
+    python3 main.py
     ```
 
 ## File Contents of folder
