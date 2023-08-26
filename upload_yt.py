@@ -61,7 +61,7 @@ def get_video_title_from_filepath(file_path):
     return os.path.splitext(os.path.basename(file_path))[0]
 
 
-if __name__ == "__main__":
+def main():
     youtube = authenticate_youtube()
     file_path = get_only_video_from_folder(
         "//Users/davidcho/vc_aggregator/output_folder")
@@ -74,3 +74,7 @@ if __name__ == "__main__":
         print(response)
     else:
         print("Video upload aborted due to file path issues.")
+
+
+if __name__ == "__main__":
+    main()
