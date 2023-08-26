@@ -72,14 +72,24 @@
 ```
 📦
 ├── README.md
-├── aggregrate_fv1.py
+├── __pycache__
+│   ├── aggregate_fv2.cpython-311.pyc
+│   └── upload_yt.cpython-311.pyc
+├── aggregate_fv2.py
 ├── environment_variables.py
+├── img
+│   ├── logo.png
+│   └── vca.png
+├── main.py
 ├── output_folder
 ├── requirements.txt
-└── test_api
-    ├── gpt_prompt.py
-    ├── tiktok_text_data.py
-    └── youtube_video_data.py
+├── test_api
+│   ├── gpt_prompt.py
+│   └── youtube_video_data.py
+├── test_script
+│   └── test_aggregate.py
+├── upload_yt.py
+└── yt_client_secret.json
 ```
 
 ## Learn More
@@ -94,7 +104,7 @@ To learn more about MoviePy, take a look at the following resources:
 - [MoviePy Documentation](https://zulko.github.io/moviepy/) - learn about MoviePy features and API.
 - [MoviePy Tutorial](https://zulko.github.io/moviepy/getting_started/your_first_clip.html) - an interactive MoviePy tutorial.
 
-To learn more about API, take a look at the following resources:
+To learn more about the APIs, take a look at the following resources:
 
 - [YouTube API](https://developers.google.com/youtube/v3/getting-started) - learn about YouTube API features and API.
 - [OpenAI API](https://beta.openai.com/) - learn about OpenAI API features and API.
