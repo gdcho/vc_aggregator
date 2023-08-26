@@ -215,7 +215,6 @@ def main():
 
     audio_clip = get_tts_audio_clip(fact)
     audio_clip = audio_clip.volumex(1.0)
-    print(f"Audio Duration: {audio_clip.duration} seconds")
     pexels_video_clips = process_pexels_videos(
         pexels_videos, audio_clip.duration)
     youtube_video_clips = process_youtube_videos(
