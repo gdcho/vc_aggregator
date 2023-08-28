@@ -165,7 +165,7 @@ def resize_and_crop_video(clip, target_width, target_height):
 def generate_subtitles(fact, final_video_duration):
     fact_parts = textwrap.wrap(fact, width=40)
     subs = []
-    interval_duration = 2.7
+    interval_duration = 2.95
     start_time = 0
     for part in fact_parts:
         end_time = min(start_time + interval_duration, final_video_duration)

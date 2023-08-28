@@ -68,9 +68,8 @@ def main():
 
     if file_path:
         title = get_video_title_from_filepath(file_path)
-        description = "Quick Unique Facts."
-        response = upload_video_to_youtube(
-            youtube, file_path, title, description)
+        description = "Quick Unique Facts: " + "#quickuniquefacts #uniquefacts #funfacts #interestingfacts #factoftheday #didyouknow #knowledge #trivia #dailyfacts "
+        response = upload_video_to_youtube(youtube, file_path, title, description)
         print(response)
     else:
         print("Video upload aborted due to file path issues.")
