@@ -3,6 +3,7 @@ import google_auth_oauthlib.flow
 import googleapiclient.discovery
 import googleapiclient.errors
 from googleapiclient.http import MediaFileUpload
+from concurrent.futures import ThreadPoolExecutor
 
 API_SERVICE_NAME = "youtube"
 API_VERSION = "v3"
@@ -62,13 +63,17 @@ def get_video_title_from_filepath(file_path):
 
 
 def main():
-    youtube = authenticate_youtube()
-    file_path = get_only_video_from_folder(
-        "//Users/davidcho/vc_aggregator/output_folder")
+    with ThreadPoolExecutor() as executor: 
+        future_auth = executor.submit(authenticate_youtube)
+        future_file_path = executor.submit(get_only_video_from_folder, "//Users/davidcho/vc_aggregator/output_folder")
+
+        youtube = future_auth.result()
+        file_path = future_file_path.result()  
 
     if file_path:
         title = get_video_title_from_filepath(file_path)
         description = "Quick Unique Facts: " + "#quickuniquefacts #uniquefacts #funfacts #interestingfacts #factoftheday #didyouknow #knowledge #trivia #dailyfacts "
+
         response = upload_video_to_youtube(youtube, file_path, title, description)
         print(response)
     else:

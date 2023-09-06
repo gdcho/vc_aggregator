@@ -18,6 +18,7 @@ from pytube import YouTube
 import ssl
 from moviepy.editor import clips_array
 from moviepy.config import change_settings
+from concurrent.futures import ThreadPoolExecutor 
 change_settings({"AUDIO_READING_FUNCTION": "pydub"})
 
 ssl._create_default_https_context = ssl._create_unverified_context
@@ -200,8 +201,15 @@ def main():
     fact = generate_fact()
     video_title = generate_title(fact)
     noun = generate_subject_noun(fact)
-    pexels_videos = fetch_pexels_videos(noun)
-    youtube_videos = fetch_youtube_videos(noun)
+
+    with ThreadPoolExecutor() as executor:  
+        future_pexels = executor.submit(fetch_pexels_videos, noun)
+        future_youtube = executor.submit(fetch_youtube_videos, noun)
+        future_audio = executor.submit(get_tts_audio_clip, fact)
+
+        pexels_videos = future_pexels.result()
+        youtube_videos = future_youtube.result()
+        audio_clip = future_audio.result()  
 
     print(f"\nGenerated Fact: {fact}")
     print(f"\nGenerated Noun: {noun}\n")
@@ -210,8 +218,8 @@ def main():
     for video_info in youtube_videos:
         video_id = video_info['id'].get('videoId')
         if video_id:
-            print(
-                f"YouTube Video Link: https://www.youtube.com/watch?v={video_id}")
+            print(f"YouTube Video Link: https://www.youtube.com/watch?v={video_id}")
+
 
     audio_clip = get_tts_audio_clip(fact)
     audio_clip = audio_clip.volumex(1.0)
