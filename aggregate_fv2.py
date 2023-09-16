@@ -201,6 +201,9 @@ def main():
     fact = generate_fact()
     video_title = generate_title(fact)
     noun = generate_subject_noun(fact)
+    
+    video_width = 1080
+    video_height = 1920
 
     with ThreadPoolExecutor() as executor:  
         future_pexels = executor.submit(fetch_pexels_videos, noun)
@@ -209,7 +212,7 @@ def main():
 
         pexels_videos = future_pexels.result()
         youtube_videos = future_youtube.result()
-        audio_clip = future_audio.result()  
+        audio_clip = future_audio.result() 
 
     print(f"\nGenerated Fact: {fact}")
     print(f"\nGenerated Noun: {noun}\n")
@@ -220,24 +223,23 @@ def main():
         if video_id:
             print(f"YouTube Video Link: https://www.youtube.com/watch?v={video_id}")
 
-
-    audio_clip = get_tts_audio_clip(fact)
     audio_clip = audio_clip.volumex(1.0)
-    pexels_video_clips = process_pexels_videos(
-        pexels_videos, audio_clip.duration)
-    youtube_video_clips = process_youtube_videos(
-        youtube_videos, audio_clip.duration)
+    
+    with ThreadPoolExecutor() as executor:
+        future_pexels_process = executor.submit(process_pexels_videos, pexels_videos, audio_clip.duration)
+        future_youtube_process = executor.submit(process_youtube_videos, youtube_videos, audio_clip.duration)
 
-    video_width = 1080
-    video_height = 1920
+        pexels_video_clips = future_pexels_process.result()
+        youtube_video_clips = future_youtube_process.result()
 
-    pexels_video_clips_resized_cropped = [resize_and_crop_video(
-        clip, video_width, video_height) for clip in pexels_video_clips]
-    youtube_video_clips_resized_cropped = [resize_and_crop_video(
-        clip, video_width, video_height) for clip in youtube_video_clips]
+    video_clips = pexels_video_clips + youtube_video_clips
+    
+    # Parallelize 
+    with ThreadPoolExecutor() as executor:
+        resized_cropped_clips = list(executor.map(lambda clip: resize_and_crop_video(clip, video_width, video_height), video_clips))
 
-    paired_clips = list(zip(pexels_video_clips_resized_cropped,
-                        youtube_video_clips_resized_cropped))
+    paired_clips = list(zip(resized_cropped_clips[:len(resized_cropped_clips)//2], 
+                            resized_cropped_clips[len(resized_cropped_clips)//2:]))
 
     stacked_clips = [clips_array([[clip1], [clip2]])
                      for clip1, clip2 in paired_clips]
@@ -245,22 +247,23 @@ def main():
     final_video = concatenate_videoclips(stacked_clips, method="compose")
 
     final_video_duration = min(audio_clip.duration, final_video.duration)
-    final_video = final_video.set_audio(
-        audio_clip.subclip(0, final_video_duration))
+    final_video = final_video.set_audio(audio_clip.subclip(0, final_video_duration))
+
     output_video_path = os.path.join(OUTPUT_FOLDER, "final_video_shorts.mp4")
-    final_video.write_videofile(
-        output_video_path, codec="libx264", audio_codec="aac", threads=4)
+    final_video.write_videofile(output_video_path, codec="libx264", audio_codec="aac", threads=4)
 
     subtitles = generate_subtitles(fact, final_video_duration)
-    final_video_with_subs = annotate_video_with_subtitles(
-        final_video, subtitles)
+    final_video_with_subs = annotate_video_with_subtitles(final_video, subtitles)
     final_video_with_subs = final_video_with_subs.set_audio(final_video.audio)
-    output_video_with_subs_path = os.path.join(
-        OUTPUT_FOLDER, video_title + ".mp4")
-    final_video_with_subs.write_videofile(
-        output_video_with_subs_path, codec="libx264", audio_codec="aac", threads=4)
+
+    output_video_with_subs_path = os.path.join(OUTPUT_FOLDER, video_title + ".mp4")
+    final_video_with_subs.write_videofile(output_video_with_subs_path, codec="libx264", audio_codec="aac", threads=4)
+    
     delete_output_files_except_final(video_title)
 
+    audio_clip.close()
+    final_video.close()
+    final_video_with_subs.close()
 
 if __name__ == "__main__":
     main()

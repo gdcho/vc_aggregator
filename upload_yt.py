@@ -16,12 +16,10 @@ def authenticate_youtube():
 
     flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
         CLIENT_SECRETS_FILE, OAUTH_SCOPE)
-
     credentials = flow.run_local_server(port=0)
 
     youtube = googleapiclient.discovery.build(
         API_SERVICE_NAME, API_VERSION, credentials=credentials)
-
     return youtube
 
 
@@ -43,8 +41,7 @@ def upload_video_to_youtube(youtube, file_path, title, description):
         media_body=MediaFileUpload(
             file_path, mimetype='video/mp4', resumable=True)
     )
-    response = request.execute()
-    return response
+    return request.execute()
 
 
 def get_only_video_from_folder(folder_path):
@@ -63,18 +60,20 @@ def get_video_title_from_filepath(file_path):
 
 
 def main():
-    with ThreadPoolExecutor() as executor: 
-        future_auth = executor.submit(authenticate_youtube)
-        future_file_path = executor.submit(get_only_video_from_folder, "//Users/davidcho/vc_aggregator/output_folder")
-
-        youtube = future_auth.result()
-        file_path = future_file_path.result()  
+    with ThreadPoolExecutor() as executor:
+        youtube = executor.submit(authenticate_youtube).result()
+        file_path = executor.submit(
+            get_only_video_from_folder, "//Users/davidcho/vc_aggregator/output_folder").result()
 
     if file_path:
         title = get_video_title_from_filepath(file_path)
-        description = "Quick Unique Facts: " + "#quickuniquefacts #uniquefacts #funfacts #interestingfacts #factoftheday #didyouknow #knowledge #trivia #dailyfacts "
+        description = ("Quick Unique Facts: "
+                       "#quickuniquefacts #uniquefacts #funfacts "
+                       "#interestingfacts #factoftheday #didyouknow "
+                       "#knowledge #trivia #dailyfacts ")
 
-        response = upload_video_to_youtube(youtube, file_path, title, description)
+        response = upload_video_to_youtube(
+            youtube, file_path, title, description)
         print(response)
     else:
         print("Video upload aborted due to file path issues.")
